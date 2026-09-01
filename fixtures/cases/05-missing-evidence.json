@@ -1,0 +1,18 @@
+{
+  "fixture_id": "missing-evidence",
+  "expected_state": "UNKNOWN",
+  "base_ledger_digest": "ledger:wave-v1",
+  "evidence_digests": [],
+  "proposals": [
+    {
+      "proposal_id": "proposal-missing-evidence",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.claim"],
+      "semantic_write_set": ["semantic.proposal"],
+      "required_evidence_digests": ["sha256:evidence-not-present"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture_id": "unordered-read-write",
+  "expected_state": "REFUTED",
+  "base_ledger_digest": "ledger:wave-v1",
+  "evidence_digests": ["sha256:evidence-unordered-writer", "sha256:evidence-unordered-reader"],
+  "proposals": [
+    {
+      "proposal_id": "proposal-unordered-reader",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.shared"],
+      "semantic_write_set": ["semantic.reader"],
+      "required_evidence_digests": ["sha256:evidence-unordered-reader"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    },
+    {
+      "proposal_id": "proposal-unordered-writer",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.source"],
+      "semantic_write_set": ["semantic.shared"],
+      "required_evidence_digests": ["sha256:evidence-unordered-writer"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    }
+  ]
+}

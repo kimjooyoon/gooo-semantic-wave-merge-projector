@@ -1,0 +1,18 @@
+{
+  "fixture_id": "authority-escalation",
+  "expected_state": "REFUTED",
+  "base_ledger_digest": "ledger:wave-v1",
+  "evidence_digests": ["sha256:evidence-authority"],
+  "proposals": [
+    {
+      "proposal_id": "proposal-authority-escalation",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.authority"],
+      "semantic_write_set": ["semantic.proposal"],
+      "required_evidence_digests": ["sha256:evidence-authority"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["repository.merge.execute"]
+    }
+  ]
+}

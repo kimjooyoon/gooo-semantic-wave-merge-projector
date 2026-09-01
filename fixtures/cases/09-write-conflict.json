@@ -1,0 +1,28 @@
+{
+  "fixture_id": "write-conflict",
+  "expected_state": "REFUTED",
+  "base_ledger_digest": "ledger:wave-v1",
+  "evidence_digests": ["sha256:evidence-write-a", "sha256:evidence-write-b"],
+  "proposals": [
+    {
+      "proposal_id": "proposal-write-a",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.source-a"],
+      "semantic_write_set": ["semantic.shared"],
+      "required_evidence_digests": ["sha256:evidence-write-a"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    },
+    {
+      "proposal_id": "proposal-write-b",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.source-b"],
+      "semantic_write_set": ["semantic.shared"],
+      "required_evidence_digests": ["sha256:evidence-write-b"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    }
+  ]
+}

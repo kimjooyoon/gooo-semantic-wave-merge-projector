@@ -1,0 +1,67 @@
+package gooo.semantic.wave_merge_projector
+
+# The released .gooo graph is the semantic authority for this projector.
+graph id=gooo-semantic-wave-merge-projector release=v0.1.0 precedence=REFUTED,UNKNOWN,CLOSED repository_writes=0 local_test_executions=0 cross_project_required_gates=0 output_artifact_count=6 ledger_digest=ledger:wave-v1
+
+artifact ordinal=1 name=wave-projection.json
+artifact ordinal=2 name=wave-distribution.json
+artifact ordinal=3 name=generated-assertions.json
+artifact ordinal=4 name=projection-events.ndjson
+artifact ordinal=5 name=replay-receipt.json
+artifact ordinal=6 name=report.md
+
+field ordinal=1 name=proposal_id type=string required=true
+field ordinal=2 name=base_ledger_digest type=string required=true
+field ordinal=3 name=semantic_read_set type=string_list required=true
+field ordinal=4 name=semantic_write_set type=string_list required=true
+field ordinal=5 name=required_evidence_digests type=string_list required=true
+field ordinal=6 name=tool_release_locks type=tool_lock_list required=true
+field ordinal=7 name=causal_dependencies type=string_list required=true
+field ordinal=8 name=authority_scope type=string_list required=true
+
+state ordinal=1 name=CLOSED result=MERGEABLE(CLOSED) next_operation=APPLY_ACCEPTED_WAVE_TO_CALLER_LEDGER
+state ordinal=2 name=UNKNOWN result=UNKNOWN next_operation=RESOLVE_FRONTIER_EVIDENCE_OR_BASE
+state ordinal=3 name=REFUTED result=REFUTED next_operation=REPAIR_OR_REPLACE_REFUTED_PROPOSAL
+
+authority ordinal=1 name=proposal-authority scope=self-improvement.proposal.create,self-improvement.proposal.inspect,self-improvement.wave.project
+
+invariant ordinal=1 id=base-ledger-aligned class=FOUNDATION proof=FOUNDATION indicator=DRIVER stage=BASE step=ALIGN_LEDGER depends_on=
+invariant ordinal=2 id=proposal-fields-complete class=FOUNDATION proof=FOUNDATION indicator=DRIVER stage=INPUT step=REQUIRE_PROPOSAL_FIELDS depends_on=base-ledger-aligned
+invariant ordinal=3 id=required-evidence-closed class=FOUNDATION proof=FOUNDATION indicator=DRIVER stage=EVIDENCE step=CLOSE_REQUIRED_EVIDENCE depends_on=proposal-fields-complete
+invariant ordinal=4 id=tool-lock-verified class=FOUNDATION proof=FOUNDATION indicator=GUARDRAIL stage=TOOLCHAIN step=VERIFY_RELEASE_LOCKS depends_on=proposal-fields-complete
+invariant ordinal=5 id=dependency-references-closed class=COHERENCE proof=COHERENCE indicator=DRIVER stage=DEPENDENCY step=CLOSE_DEPENDENCY_REFERENCES depends_on=proposal-fields-complete
+invariant ordinal=6 id=dependency-dag-acyclic class=COHERENCE proof=COHERENCE indicator=OUTCOME stage=DEPENDENCY step=TOPOLOGICAL_ORDER depends_on=dependency-references-closed
+invariant ordinal=7 id=read-after-write-ordered class=COHERENCE proof=COHERENCE indicator=OUTCOME stage=CONFLICT step=ORDER_READ_AFTER_WRITE depends_on=dependency-dag-acyclic
+invariant ordinal=8 id=write-set-disjoint class=COHERENCE proof=COHERENCE indicator=GUARDRAIL stage=CONFLICT step=REJECT_OVERLAPPING_WRITES depends_on=dependency-dag-acyclic
+invariant ordinal=9 id=authority-scope-closed class=REGRESSION proof=REGRESSION indicator=GUARDRAIL stage=AUTHORITY step=CLOSE_AUTHORITY_SCOPE depends_on=proposal-fields-complete
+invariant ordinal=10 id=deterministic-wave-order class=REGRESSION proof=REGRESSION indicator=OUTCOME stage=WAVE step=PROJECT_STABLE_ORDER depends_on=dependency-dag-acyclic
+invariant ordinal=11 id=frontier-preserved class=REGRESSION proof=REGRESSION indicator=DRIVER stage=FRONTIER step=PRESERVE_DEFERRED_FRONTIER depends_on=deterministic-wave-order
+invariant ordinal=12 id=caller-owned-output class=REGRESSION proof=REGRESSION indicator=GUARDRAIL stage=OUTPUT step=WRITE_CALLER_OUTPUT_ONLY depends_on=frontier-preserved
+
+rule id=base_digest_mismatch invariant=base-ledger-aligned state=UNKNOWN reason=PROPOSAL_BASE_DOES_NOT_MATCH_TARGET_LEDGER unknown_class=STALE_BASE next_operation=REFRESH_BASE_LEDGER_DIGEST
+rule id=missing_evidence invariant=required-evidence-closed state=UNKNOWN reason=REQUIRED_EVIDENCE_DIGEST_NOT_AVAILABLE unknown_class=MISSING_EVIDENCE next_operation=SUPPLY_VERIFIED_EVIDENCE_DIGESTS
+rule id=mutable_tool_lock invariant=tool-lock-verified state=UNKNOWN reason=TOOL_RELEASE_LOCK_IS_MUTABLE unknown_class=MUTABLE_TOOL_LOCK next_operation=PIN_IMMUTABLE_TOOL_RELEASE_DIGEST
+rule id=unverified_tool_lock invariant=tool-lock-verified state=UNKNOWN reason=TOOL_RELEASE_LOCK_IS_UNVERIFIED unknown_class=UNVERIFIED_TOOL_LOCK next_operation=VERIFY_TOOL_RELEASE_DIGEST
+rule id=missing_dependency invariant=dependency-references-closed state=UNKNOWN reason=CAUSAL_DEPENDENCY_IS_NOT_PRESENT unknown_class=MISSING_DEPENDENCY next_operation=ADD_DEPENDENCY_PROPOSAL_OR_REMOVE_REFERENCE
+rule id=dependency_not_closed invariant=dependency-references-closed state=UNKNOWN reason=CAUSAL_DEPENDENCY_IS_NOT_CLOSED unknown_class=OPEN_DEPENDENCY next_operation=RESOLVE_BLOCKING_DEPENDENCY_FRONTIER
+rule id=dependency_cycle invariant=dependency-dag-acyclic state=UNKNOWN reason=CAUSAL_DEPENDENCY_GRAPH_CONTAINS_CYCLE unknown_class=CYCLIC_DEPENDENCY next_operation=BREAK_DEPENDENCY_CYCLE
+rule id=read_write_conflict invariant=read-after-write-ordered state=REFUTED reason=READ_WRITE_OVERLAP_IS_NOT_CAUSALLY_ORDERED unknown_class=UNORDERED_READ_WRITE next_operation=ADD_CAUSAL_ORDER_OR_SEPARATE_WAVE
+rule id=write_conflict invariant=write-set-disjoint state=REFUTED reason=WRITE_SETS_OVERLAP unknown_class=OVERLAPPING_WRITE next_operation=REBASE_OR_SPLIT_OVERLAPPING_PROPOSALS
+rule id=authority_escalation invariant=authority-scope-closed state=REFUTED reason=PROPOSAL_AUTHORITY_SCOPE_EXCEEDS_RELEASED_SCOPE unknown_class=AUTHORITY_ESCALATION next_operation=REMOVE_ESCALATED_SCOPE_AND_RESUBMIT
+rule id=malformed_proposal invariant=proposal-fields-complete state=REFUTED reason=PROPOSAL_ENVELOPE_IS_MALFORMED unknown_class=MALFORMED_INPUT next_operation=REPAIR_PROPOSAL_ENVELOPE
+rule id=duplicate_proposal_id invariant=proposal-fields-complete state=REFUTED reason=PROPOSAL_ID_IS_NOT_UNIQUE unknown_class=DUPLICATE_ID next_operation=RENAME_DUPLICATE_PROPOSAL
+rule id=empty_proposal_set invariant=proposal-fields-complete state=REFUTED reason=PROPOSAL_SET_IS_EMPTY unknown_class=MALFORMED_INPUT next_operation=SUPPLY_AT_LEAST_ONE_PROPOSAL
+rule id=replay_mismatch invariant=deterministic-wave-order state=REFUTED reason=ORDER_PERTURBED_PROJECTION_CHANGED unknown_class=NON_DETERMINISTIC_REPLAY next_operation=REPAIR_STABLE_SORT_ORDER
+
+case ordinal=1 id=independent-merge expected=CLOSED fixture=01-independent-merge.json
+case ordinal=2 id=read-after-write-dependency expected=CLOSED fixture=02-read-after-write-dependency.json
+case ordinal=3 id=stable-base-and-authority expected=CLOSED fixture=03-stable-base-and-authority.json
+case ordinal=4 id=verified-tool-and-evidence expected=CLOSED fixture=04-verified-tool-and-evidence.json
+case ordinal=5 id=missing-evidence expected=UNKNOWN fixture=05-missing-evidence.json
+case ordinal=6 id=stale-base expected=UNKNOWN fixture=06-stale-base.json
+case ordinal=7 id=cycle-dependency expected=UNKNOWN fixture=07-cycle-dependency.json
+case ordinal=8 id=unverified-tool-lock expected=UNKNOWN fixture=08-unverified-tool-lock.json
+case ordinal=9 id=write-conflict expected=REFUTED fixture=09-write-conflict.json
+case ordinal=10 id=authority-escalation expected=REFUTED fixture=10-authority-escalation.json
+case ordinal=11 id=malformed-proposal expected=REFUTED fixture=11-malformed-proposal.json
+case ordinal=12 id=unordered-read-write expected=REFUTED fixture=12-unordered-read-write.json

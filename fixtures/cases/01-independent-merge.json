@@ -1,0 +1,28 @@
+{
+  "fixture_id": "independent-merge",
+  "expected_state": "CLOSED",
+  "base_ledger_digest": "ledger:wave-v1",
+  "evidence_digests": ["sha256:evidence-independent-a", "sha256:evidence-independent-b"],
+  "proposals": [
+    {
+      "proposal_id": "proposal-independent-a",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.account"],
+      "semantic_write_set": ["semantic.billing"],
+      "required_evidence_digests": ["sha256:evidence-independent-a"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    },
+    {
+      "proposal_id": "proposal-independent-b",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.profile"],
+      "semantic_write_set": ["semantic.catalog"],
+      "required_evidence_digests": ["sha256:evidence-independent-b"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    }
+  ]
+}

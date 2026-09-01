@@ -1,0 +1,18 @@
+{
+  "fixture_id": "unverified-tool-lock",
+  "expected_state": "UNKNOWN",
+  "base_ledger_digest": "ledger:wave-v1",
+  "evidence_digests": ["sha256:evidence-unverified-lock"],
+  "proposals": [
+    {
+      "proposal_id": "proposal-unverified-lock",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.tool"],
+      "semantic_write_set": ["semantic.receipt"],
+      "required_evidence_digests": ["sha256:evidence-unverified-lock"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": false}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema": "gooo/semantic-wave-merge-projector/release-lock/v1",
+  "repository": "kimjooyoon/gooo-semantic-wave-merge-projector",
+  "tag": "v0.1.0",
+  "go": "1.27.0",
+  "repository_writes": 0,
+  "local_test_executions": 0,
+  "cross_project_required_gates": 0,
+  "artifact_count": 6,
+  "denominator": 12,
+  "immutable_policy": {
+    "release_must_be_annotated": true,
+    "release_must_be_published_once": true,
+    "operator_api_attempts": 0,
+    "receipt_field": "immutable"
+  }
+}

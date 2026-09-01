@@ -1,0 +1,28 @@
+{
+  "fixture_id": "cycle-dependency",
+  "expected_state": "UNKNOWN",
+  "base_ledger_digest": "ledger:wave-v1",
+  "evidence_digests": ["sha256:evidence-cycle-a", "sha256:evidence-cycle-b"],
+  "proposals": [
+    {
+      "proposal_id": "proposal-cycle-a",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.a"],
+      "semantic_write_set": ["semantic.b"],
+      "required_evidence_digests": ["sha256:evidence-cycle-a"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": ["proposal-cycle-b"],
+      "authority_scope": ["self-improvement.proposal.create"]
+    },
+    {
+      "proposal_id": "proposal-cycle-b",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.b"],
+      "semantic_write_set": ["semantic.c"],
+      "required_evidence_digests": ["sha256:evidence-cycle-b"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": ["proposal-cycle-a"],
+      "authority_scope": ["self-improvement.proposal.create"]
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.27
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.0'
+          cache: true
+
+      - name: Verify Go formatting
+        shell: bash
+        run: |
+          diff_output="$(gofmt -d $(find . -name '*.go' -type f -not -path './.git/*'))"
+          test -z "$diff_output"
+
+      - name: Run unit tests
+        run: go test ./...
+
+      - name: Run static checks
+        run: go vet ./...
+
+      - name: Build all packages
+        run: go build ./...
+
+      - name: Validate workflow syntax
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          "$(go env GOPATH)/bin/actionlint"
+
+      - name: Check released semantic graph
+        run: go run ./cmd/projector check --source .gooo/semantic-wave-merge-projector.gooo --cases fixtures/cases
+
+      - name: Generate and verify canonical wave projection
+        shell: bash
+        run: |
+          output_dir="$RUNNER_TEMP/gooo-wave-output"
+          mkdir -p "$output_dir"
+          go run ./cmd/projector conformance \
+            --source .gooo/semantic-wave-merge-projector.gooo \
+            --cases fixtures/cases \
+            --output "$output_dir" \
+            --root "$GITHUB_WORKSPACE"
+          test "$(find "$output_dir" -maxdepth 1 -type f | wc -l | tr -d ' ')" = 6
+
+      - name: Confirm source repository stayed read-only
+        run: git diff --exit-code -- . ':!.github/workflows/verify.yml'
+
+      - name: Upload caller-owned projection artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gooo-wave-projection
+          path: ${{ runner.temp }}/gooo-wave-output
+          if-no-files-found: error

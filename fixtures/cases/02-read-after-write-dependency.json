@@ -1,0 +1,28 @@
+{
+  "fixture_id": "read-after-write-dependency",
+  "expected_state": "CLOSED",
+  "base_ledger_digest": "ledger:wave-v1",
+  "evidence_digests": ["sha256:evidence-raw-writer", "sha256:evidence-raw-reader"],
+  "proposals": [
+    {
+      "proposal_id": "proposal-raw-reader",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.catalog.item"],
+      "semantic_write_set": ["semantic.index.item"],
+      "required_evidence_digests": ["sha256:evidence-raw-reader"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": ["proposal-raw-writer"],
+      "authority_scope": ["self-improvement.proposal.create"]
+    },
+    {
+      "proposal_id": "proposal-raw-writer",
+      "base_ledger_digest": "ledger:wave-v1",
+      "semantic_read_set": ["semantic.source"],
+      "semantic_write_set": ["semantic.catalog.item"],
+      "required_evidence_digests": ["sha256:evidence-raw-writer"],
+      "tool_release_locks": [{"tool_id": "gooo-evaluator", "release_digest": "sha256:tool-v1", "mutable": false, "verified": true}],
+      "causal_dependencies": [],
+      "authority_scope": ["self-improvement.proposal.create"]
+    }
+  ]
+}
