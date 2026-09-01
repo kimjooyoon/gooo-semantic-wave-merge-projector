@@ -137,10 +137,7 @@ func writeGeneration(outputPath string, result GenerationResult) error {
 }
 
 func outputBytes(result GenerationResult) (map[string][]byte, error) {
-	denominator, err := jsonWithNewline(result.Denominator)
-	if err != nil {
-		return nil, err
-	}
+	var err error
 	distribution, err := jsonWithNewline(result.Distribution)
 	if err != nil {
 		return nil, err
