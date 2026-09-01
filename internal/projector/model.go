@@ -130,25 +130,25 @@ type CaseContract struct {
 }
 
 type SemanticGraph struct {
-	Schema                    string                     `json:"schema"`
-	GraphID                   string                     `json:"graph_id"`
-	Release                   string                     `json:"release"`
-	Precedence                []string                   `json:"precedence"`
-	RepositoryWrites          int                        `json:"repository_writes"`
-	LocalTestExecutions       int                        `json:"local_test_executions"`
-	CrossProjectRequiredGates int                        `json:"cross_project_required_gates"`
-	OutputArtifactCount       int                        `json:"output_artifact_count"`
-	LedgerDigest              string                     `json:"ledger_digest"`
-	Artifacts                 []ArtifactDecl             `json:"artifacts"`
-	Fields                    []FieldDecl                `json:"fields"`
-	States                    map[string]StateDecl       `json:"states"`
-	Authorities               []AuthorityDecl            `json:"authorities"`
-	BootstrapProvenance       BootstrapProvenanceDecl    `json:"bootstrap_provenance"`
-	ReviewGate                ReviewGateDecl             `json:"review_gate"`
-	ReviewFixture             string                     `json:"review_fixture"`
-	Invariants                []InvariantDecl            `json:"invariants"`
-	Rules                     map[string]RuleDecl        `json:"rules"`
-	Cases                     []CaseContract             `json:"cases"`
+	Schema                    string                  `json:"schema"`
+	GraphID                   string                  `json:"graph_id"`
+	Release                   string                  `json:"release"`
+	Precedence                []string                `json:"precedence"`
+	RepositoryWrites          int                     `json:"repository_writes"`
+	LocalTestExecutions       int                     `json:"local_test_executions"`
+	CrossProjectRequiredGates int                     `json:"cross_project_required_gates"`
+	OutputArtifactCount       int                     `json:"output_artifact_count"`
+	LedgerDigest              string                  `json:"ledger_digest"`
+	Artifacts                 []ArtifactDecl          `json:"artifacts"`
+	Fields                    []FieldDecl             `json:"fields"`
+	States                    map[string]StateDecl    `json:"states"`
+	Authorities               []AuthorityDecl         `json:"authorities"`
+	BootstrapProvenance       BootstrapProvenanceDecl `json:"bootstrap_provenance"`
+	ReviewGate                ReviewGateDecl          `json:"review_gate"`
+	ReviewFixture             string                  `json:"review_fixture"`
+	Invariants                []InvariantDecl         `json:"invariants"`
+	Rules                     map[string]RuleDecl     `json:"rules"`
+	Cases                     []CaseContract          `json:"cases"`
 }
 
 type SemanticIR struct {
@@ -211,10 +211,10 @@ type OperatorProvenanceReceipt struct {
 	BootstrapRef      string        `json:"bootstrap_ref"`
 	ReviewGate        string        `json:"review_gate"`
 	PullRequestNumber int           `json:"pull_request_number"`
-	MergeSHA         string        `json:"merge_sha,omitempty"`
-	ReleaseTag       string        `json:"release_tag,omitempty"`
-	Evidence         []string      `json:"evidence"`
-	Unknown          *UnknownClaim `json:"unknown,omitempty"`
+	MergeSHA          string        `json:"merge_sha,omitempty"`
+	ReleaseTag        string        `json:"release_tag,omitempty"`
+	Evidence          []string      `json:"evidence"`
+	Unknown           *UnknownClaim `json:"unknown,omitempty"`
 }
 
 type UnknownClaim struct {
@@ -268,23 +268,23 @@ type DeferredProposal struct {
 }
 
 type CaseResult struct {
-	Ordinal                       int                   `json:"ordinal"`
-	InvariantID                   string                `json:"invariant_id"`
-	CaseID                        string                `json:"case_id"`
-	ExpectedState                 string                `json:"expected_state"`
-	State                         string                `json:"state"`
-	Result                        string                `json:"result"`
-	Reason                        string                `json:"reason"`
-	Unknown                       *UnknownClaim         `json:"unknown,omitempty"`
-	BaseLedgerDigest              string                `json:"base_ledger_digest"`
-	DeterministicTopologicalOrder []string              `json:"deterministic_topological_order"`
-	TopologicalOrderValid         bool                  `json:"topological_order_valid"`
-	AcceptedWave                  []string              `json:"accepted_wave"`
-	DeferredFrontier              []DeferredProposal    `json:"deferred_frontier"`
-	ConflictWitnesses             []ConflictWitness     `json:"conflict_witnesses"`
-	Proposals                     []ProposalProjection  `json:"proposals"`
-	NextOperation                 string                `json:"next_operation"`
-	FixturePath                   string                `json:"fixture_path"`
+	Ordinal                       int                  `json:"ordinal"`
+	InvariantID                   string               `json:"invariant_id"`
+	CaseID                        string               `json:"case_id"`
+	ExpectedState                 string               `json:"expected_state"`
+	State                         string               `json:"state"`
+	Result                        string               `json:"result"`
+	Reason                        string               `json:"reason"`
+	Unknown                       *UnknownClaim        `json:"unknown,omitempty"`
+	BaseLedgerDigest              string               `json:"base_ledger_digest"`
+	DeterministicTopologicalOrder []string             `json:"deterministic_topological_order"`
+	TopologicalOrderValid         bool                 `json:"topological_order_valid"`
+	AcceptedWave                  []string             `json:"accepted_wave"`
+	DeferredFrontier              []DeferredProposal   `json:"deferred_frontier"`
+	ConflictWitnesses             []ConflictWitness    `json:"conflict_witnesses"`
+	Proposals                     []ProposalProjection `json:"proposals"`
+	NextOperation                 string               `json:"next_operation"`
+	FixturePath                   string               `json:"fixture_path"`
 }
 
 type StateCounts struct {
