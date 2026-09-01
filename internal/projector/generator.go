@@ -170,12 +170,12 @@ func outputBytes(result GenerationResult) (map[string][]byte, error) {
 		return nil, err
 	}
 	return map[string][]byte{
-		"wave-projection.json":        projection,
-		"wave-distribution.json":      distribution,
-		"generated-assertions.json":   assertions,
-		"projection-events.ndjson":    events.Bytes(),
-		"replay-receipt.json":         replay,
-		"report.md":                   []byte(result.Report),
+		"wave-projection.json":      projection,
+		"wave-distribution.json":    distribution,
+		"generated-assertions.json": assertions,
+		"projection-events.ndjson":  events.Bytes(),
+		"replay-receipt.json":       replay,
+		"report.md":                 []byte(result.Report),
 	}, nil
 }
 
@@ -204,26 +204,26 @@ func buildDenominator(ir SemanticIR, results []CaseResult, provenance OperatorPr
 		Invariants:          append([]InvariantDecl(nil), ir.Graph.Invariants...),
 		Fields:              append([]FieldDecl(nil), ir.Graph.Fields...),
 		Authority: map[string]any{
-			"semantic_graph":            "RELEASED_GOOO",
-			"go_role":                   []string{"PARSER", "EVALUATOR", "GENERATOR", "RUNTIME"},
-			"repository_writes":         ir.Graph.RepositoryWrites,
-			"local_test_executions":     ir.Graph.LocalTestExecutions,
+			"semantic_graph":               "RELEASED_GOOO",
+			"go_role":                      []string{"PARSER", "EVALUATOR", "GENERATOR", "RUNTIME"},
+			"repository_writes":            ir.Graph.RepositoryWrites,
+			"local_test_executions":        ir.Graph.LocalTestExecutions,
 			"cross_project_required_gates": ir.Graph.CrossProjectRequiredGates,
-			"caller_owned_output":       true,
+			"caller_owned_output":          true,
 		},
 		OperatorProvenance: provenance,
-		OutputArtifacts: append([]string(nil), RequiredArtifactNames...),
-		Cases:           results,
+		OutputArtifacts:    append([]string(nil), RequiredArtifactNames...),
+		Cases:              results,
 	}
 }
 
 func buildDistribution(ir SemanticIR, results []CaseResult) SemanticDistribution {
 	return SemanticDistribution{
-		Schema:          DistributionSchema,
-		SourceDigest:    ir.SourceDigest,
-		States:          stateCounts(results),
-		ProofVector:     vectorCounts(ir.Graph, true),
-		IndicatorVector: vectorCounts(ir.Graph, false),
+		Schema:           DistributionSchema,
+		SourceDigest:     ir.SourceDigest,
+		States:           stateCounts(results),
+		ProofVector:      vectorCounts(ir.Graph, true),
+		IndicatorVector:  vectorCounts(ir.Graph, false),
 		DirectCountsOnly: true,
 	}
 }
@@ -329,12 +329,12 @@ func buildOperatorProvenance(graph SemanticGraph, review ReviewOptions) Operator
 	}
 	if review.PullRequestNumber <= 0 {
 		receipt.Unknown = &UnknownClaim{
-			Stage: graph.BootstrapProvenance.Ref,
-			Step: graph.ReviewGate.ID,
-			Reason: graph.ReviewGate.Reason,
-			UnknownClass: graph.ReviewGate.UnknownClass,
+			Stage:         graph.BootstrapProvenance.Ref,
+			Step:          graph.ReviewGate.ID,
+			Reason:        graph.ReviewGate.Reason,
+			UnknownClass:  graph.ReviewGate.UnknownClass,
 			NextOperation: graph.ReviewGate.NextOperation,
-			BlockedBy: []string{"pull_request_number"},
+			BlockedBy:     []string{"pull_request_number"},
 		}
 		return receipt
 	}

@@ -28,8 +28,8 @@ func main() {
 
 type flags struct {
 	source, cases, output, root string
-	reviewedPR int
-	mergeSHA, releaseTag string
+	reviewedPR                  int
+	mergeSHA, releaseTag        string
 }
 
 func parseFlags(command string, args []string, outputRequired bool) flags {
@@ -60,14 +60,14 @@ func check(args []string) {
 		fatal(err.Error())
 	}
 	printJSON(struct {
-		Schema                 string `json:"schema"`
-		Invariants             int    `json:"invariants"`
-		ProposalFields         int    `json:"proposal_fields"`
-		Cases                  int    `json:"cases"`
-		Artifacts              int    `json:"artifacts"`
-		RepositoryWrites       int    `json:"repository_writes"`
-		LocalTestExecutions    int    `json:"local_test_executions"`
-		CrossProjectGates      int    `json:"cross_project_required_gates"`
+		Schema              string `json:"schema"`
+		Invariants          int    `json:"invariants"`
+		ProposalFields      int    `json:"proposal_fields"`
+		Cases               int    `json:"cases"`
+		Artifacts           int    `json:"artifacts"`
+		RepositoryWrites    int    `json:"repository_writes"`
+		LocalTestExecutions int    `json:"local_test_executions"`
+		CrossProjectGates   int    `json:"cross_project_required_gates"`
 	}{ir.Schema, len(ir.Graph.Invariants), len(ir.Graph.Fields), len(fixtures), len(ir.Graph.Artifacts), ir.Graph.RepositoryWrites, ir.Graph.LocalTestExecutions, ir.Graph.CrossProjectRequiredGates})
 }
 
