@@ -25,7 +25,8 @@ jobs:
       - name: Verify Go formatting
         shell: bash
         run: |
-          gofmt -d $(find . -name '*.go' -type f -not -path './.git/*') | tee "$RUNNER_TEMP/gofmt.diff"
+          mapfile -d '' go_files < <(find . -name '*.go' -type f -not -path './.git/*' -print0)
+          gofmt -d "${go_files[@]}" | tee "$RUNNER_TEMP/gofmt.diff"
           test ! -s "$RUNNER_TEMP/gofmt.diff"
 
       - name: Run unit tests
@@ -75,7 +76,7 @@ jobs:
         run: git diff --exit-code -- . ':!.github/workflows/verify.yml'
 
       - name: Upload caller-owned projection artifacts
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: gooo-wave-projection
