@@ -25,8 +25,8 @@ jobs:
       - name: Verify Go formatting
         shell: bash
         run: |
-          diff_output="$(gofmt -d $(find . -name '*.go' -type f -not -path './.git/*'))"
-          test -z "$diff_output"
+          gofmt -d $(find . -name '*.go' -type f -not -path './.git/*') | tee "$RUNNER_TEMP/gofmt.diff"
+          test ! -s "$RUNNER_TEMP/gofmt.diff"
 
       - name: Run unit tests
         run: go test ./...
