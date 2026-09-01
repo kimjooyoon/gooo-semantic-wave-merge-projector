@@ -39,7 +39,7 @@ invariant ordinal=7 id=read-after-write-ordered class=COHERENCE proof=COHERENCE 
 invariant ordinal=8 id=write-set-disjoint class=COHERENCE proof=COHERENCE indicator=GUARDRAIL stage=CONFLICT step=REJECT_OVERLAPPING_WRITES depends_on=dependency-dag-acyclic
 invariant ordinal=9 id=authority-scope-closed class=REGRESSION proof=REGRESSION indicator=GUARDRAIL stage=AUTHORITY step=CLOSE_AUTHORITY_SCOPE depends_on=proposal-fields-complete
 invariant ordinal=10 id=deterministic-wave-order class=REGRESSION proof=REGRESSION indicator=OUTCOME stage=WAVE step=PROJECT_STABLE_ORDER depends_on=dependency-dag-acyclic
-invariant ordinal=11 id=frontier-preserved class=REGRESSION proof=REGRESSION indicator=DRIVER stage=FRONTIER step=PRESERVE_DEFERRED_FRONTIER depends_on=deterministic-wave-order
+invariant ordinal=11 id=frontier-preserved class=REGRESSION proof=REGRESSION indicator=OUTCOME stage=FRONTIER step=PRESERVE_DEFERRED_FRONTIER depends_on=deterministic-wave-order
 invariant ordinal=12 id=caller-owned-output class=REGRESSION proof=REGRESSION indicator=GUARDRAIL stage=OUTPUT step=WRITE_CALLER_OUTPUT_ONLY depends_on=frontier-preserved
 
 rule id=base_digest_mismatch invariant=base-ledger-aligned state=UNKNOWN reason=PROPOSAL_BASE_DOES_NOT_MATCH_TARGET_LEDGER unknown_class=STALE_BASE next_operation=REFRESH_BASE_LEDGER_DIGEST
