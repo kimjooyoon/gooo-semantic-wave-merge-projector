@@ -28,6 +28,8 @@ func main() {
 
 type flags struct {
 	source, cases, output, root string
+	reviewedPR int
+	mergeSHA, releaseTag string
 }
 
 func parseFlags(command string, args []string, outputRequired bool) flags {
@@ -37,6 +39,9 @@ func parseFlags(command string, args []string, outputRequired bool) flags {
 	set.StringVar(&values.cases, "cases", "fixtures/cases", "canonical proposal fixture directory")
 	set.StringVar(&values.output, "output", "", "absolute empty caller-owned output directory")
 	set.StringVar(&values.root, "root", ".", "source repository root")
+	set.IntVar(&values.reviewedPR, "reviewed-pr", 0, "reviewed pull request number")
+	set.StringVar(&values.mergeSHA, "reviewed-merge-sha", "", "merge commit recorded by the annotated release tag")
+	set.StringVar(&values.releaseTag, "release-tag", "", "annotated release tag carrying review evidence")
 	set.Parse(args)
 	if outputRequired && values.output == "" {
 		fatal("%s requires --output", command)
@@ -68,7 +73,11 @@ func check(args []string) {
 
 func generate(args []string, conformance bool) {
 	values := parseFlags("generate", args, true)
-	result, err := projector.Generate(values.source, values.cases, values.output, values.root)
+	result, err := projector.GenerateWithOptions(values.source, values.cases, values.output, values.root, projector.ReviewOptions{
+		PullRequestNumber: values.reviewedPR,
+		MergeSHA:          values.mergeSHA,
+		ReleaseTag:        values.releaseTag,
+	})
 	if err != nil {
 		fatal(err.Error())
 	}
@@ -97,6 +106,12 @@ func verifyConformance(output string, result projector.GenerationResult) error {
 	}
 	if !result.Replay.Match || !result.Replay.Immutable {
 		return fmt.Errorf("deterministic immutable replay receipt failed")
+	}
+	if result.Denominator.OperatorProvenance.BootstrapState != projector.StateRefuted || result.Denominator.OperatorProvenance.BootstrapReason != "PR_FIRST_IMPLEMENTATION_BYPASSED" {
+		return fmt.Errorf("operator bootstrap refutation provenance was not preserved")
+	}
+	if result.Denominator.OperatorProvenance.ReviewGate != "PR_REVIEWED" && result.Denominator.OperatorProvenance.ReviewGate != "PR_REVIEWED_AND_MERGED" {
+		return fmt.Errorf("PR-reviewed release gate is not closed")
 	}
 	for _, value := range result.Denominator.ProofVector {
 		if value.Count != 4 {

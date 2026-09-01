@@ -78,6 +78,27 @@ type AuthorityDecl struct {
 	Source  SourceLocation `json:"source_location"`
 }
 
+type BootstrapProvenanceDecl struct {
+	ID      string         `json:"id"`
+	State   string         `json:"state"`
+	Reason  string         `json:"reason"`
+	Commit  string         `json:"commit"`
+	Ref     string         `json:"ref"`
+	Source  SourceLocation `json:"source_location"`
+}
+
+type ReviewGateDecl struct {
+	ID             string         `json:"id"`
+	Required       bool           `json:"required"`
+	MissingState   string         `json:"missing_state"`
+	ReviewedState  string         `json:"reviewed_state"`
+	MergedState    string         `json:"merged_state"`
+	Reason         string         `json:"reason"`
+	UnknownClass   string         `json:"unknown_class"`
+	NextOperation  string         `json:"next_operation"`
+	Source         SourceLocation `json:"source_location"`
+}
+
 type InvariantDecl struct {
 	Ordinal   int            `json:"ordinal"`
 	StableID  string         `json:"stable_id"`
@@ -122,6 +143,9 @@ type SemanticGraph struct {
 	Fields                    []FieldDecl         `json:"fields"`
 	States                    map[string]StateDecl `json:"states"`
 	Authorities               []AuthorityDecl     `json:"authorities"`
+	BootstrapProvenance       BootstrapProvenanceDecl `json:"bootstrap_provenance"`
+	ReviewGate                ReviewGateDecl      `json:"review_gate"`
+	ReviewFixture             string              `json:"review_fixture"`
 	Invariants                []InvariantDecl     `json:"invariants"`
 	Rules                     map[string]RuleDecl `json:"rules"`
 	Cases                     []CaseContract      `json:"cases"`
@@ -159,6 +183,38 @@ type FixtureInput struct {
 	EvidenceDigests    []string        `json:"evidence_digests"`
 	Proposals          []ProposalInput `json:"proposals"`
 	FixturePath        string          `json:"-"`
+}
+
+type ReviewOptions struct {
+	PullRequestNumber int
+	MergeSHA          string
+	ReleaseTag        string
+}
+
+type ReviewFixture struct {
+	FixtureID        string `json:"fixture_id"`
+	Kind             string `json:"kind"`
+	Required         bool   `json:"required"`
+	BootstrapState   string `json:"bootstrap_state"`
+	BootstrapReason  string `json:"bootstrap_reason"`
+	MissingReviewState string `json:"missing_review_state"`
+	ReviewedState    string `json:"reviewed_state"`
+	MergedState      string `json:"merged_state"`
+	EvidenceSource   string `json:"evidence_source"`
+	FailClosed       bool   `json:"fail_closed"`
+}
+
+type OperatorProvenanceReceipt struct {
+	BootstrapState   string        `json:"bootstrap_state"`
+	BootstrapReason  string        `json:"bootstrap_reason"`
+	BootstrapCommit  string        `json:"bootstrap_commit"`
+	BootstrapRef     string        `json:"bootstrap_ref"`
+	ReviewGate       string        `json:"review_gate"`
+	PullRequestNumber int          `json:"pull_request_number"`
+	MergeSHA         string        `json:"merge_sha,omitempty"`
+	ReleaseTag       string        `json:"release_tag,omitempty"`
+	Evidence         []string      `json:"evidence"`
+	Unknown          *UnknownClaim `json:"unknown,omitempty"`
 }
 
 type UnknownClaim struct {
@@ -264,6 +320,7 @@ type SemanticDenominator struct {
 	Invariants          []InvariantDecl `json:"invariants"`
 	Fields              []FieldDecl     `json:"proposal_fields"`
 	Authority           map[string]any  `json:"authority"`
+	OperatorProvenance  OperatorProvenanceReceipt `json:"operator_provenance"`
 	OutputArtifacts     []string        `json:"output_artifacts"`
 	Cases               []CaseResult    `json:"cases"`
 }
@@ -305,6 +362,7 @@ type ReplayReceipt struct {
 	State                  string `json:"state"`
 	Reason                 string `json:"reason"`
 	Immutable              bool   `json:"immutable"`
+	OperatorProvenance     OperatorProvenanceReceipt `json:"operator_provenance"`
 }
 
 type GenerationResult struct {

@@ -46,6 +46,7 @@ jobs:
         run: go run ./cmd/projector check --source .gooo/semantic-wave-merge-projector.gooo --cases fixtures/cases
 
       - name: Generate and verify canonical wave projection
+        if: github.event_name == 'pull_request'
         shell: bash
         run: |
           output_dir="$RUNNER_TEMP/gooo-wave-output"
@@ -54,13 +55,27 @@ jobs:
             --source .gooo/semantic-wave-merge-projector.gooo \
             --cases fixtures/cases \
             --output "$output_dir" \
-            --root "$GITHUB_WORKSPACE"
+            --root "$GITHUB_WORKSPACE" \
+            --reviewed-pr "${{ github.event.pull_request.number }}"
           test "$(find "$output_dir" -maxdepth 1 -type f | wc -l | tr -d ' ')" = 6
+
+      - name: Generate fail-closed projection on direct branch push
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          output_dir="$RUNNER_TEMP/gooo-wave-output"
+          mkdir -p "$output_dir"
+          go run ./cmd/projector generate \
+            --source .gooo/semantic-wave-merge-projector.gooo \
+            --cases fixtures/cases \
+            --output "$output_dir" \
+            --root "$GITHUB_WORKSPACE"
 
       - name: Confirm source repository stayed read-only
         run: git diff --exit-code -- . ':!.github/workflows/verify.yml'
 
       - name: Upload caller-owned projection artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gooo-wave-projection

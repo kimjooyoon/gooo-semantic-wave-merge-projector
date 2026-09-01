@@ -13,11 +13,23 @@ import (
 )
 
 func Generate(sourcePath, casesPath, outputPath, repositoryRoot string) (GenerationResult, error) {
+	return GenerateWithOptions(sourcePath, casesPath, outputPath, repositoryRoot, ReviewOptions{})
+}
+
+func GenerateWithOptions(sourcePath, casesPath, outputPath, repositoryRoot string, review ReviewOptions) (GenerationResult, error) {
 	if err := EnsureCallerDirectory(outputPath, repositoryRoot); err != nil {
 		return GenerationResult{}, err
 	}
 	ir, _, err := LoadGraph(sourcePath)
 	if err != nil {
+		return GenerationResult{}, err
+	}
+	sourceAbsolute, err := filepath.Abs(sourcePath)
+	if err != nil {
+		return GenerationResult{}, err
+	}
+	reviewFixturePath := filepath.Join(filepath.Dir(filepath.Dir(sourceAbsolute)), ir.Graph.ReviewFixture)
+	if _, err := LoadReviewFixture(reviewFixturePath, ir.Graph); err != nil {
 		return GenerationResult{}, err
 	}
 	fixtures, err := LoadCases(casesPath, ir.Graph)
@@ -30,6 +42,7 @@ func Generate(sourcePath, casesPath, outputPath, repositoryRoot string) (Generat
 	perturbedResults := EvaluateFixtures(ir, perturbedFixtures)
 	normalDigest := projectionDigest(normalResults)
 	perturbedDigest := projectionDigest(perturbedResults)
+	provenance := buildOperatorProvenance(ir.Graph, review)
 	replay := ReplayReceipt{
 		Schema:                   ReplaySchema,
 		SourceDigest:             ir.SourceDigest,
@@ -41,18 +54,19 @@ func Generate(sourcePath, casesPath, outputPath, repositoryRoot string) (Generat
 		State:                    StateClosed,
 		Reason:                   "ORDER_PERTURBED_REPLAY_MATCH",
 		Immutable:                true,
+		OperatorProvenance:       provenance,
 	}
 	if !replay.Match {
 		replay.State = StateRefuted
 		replay.Reason = ir.Graph.Rules["replay_mismatch"].Reason
 	}
 	result := GenerationResult{
-		Denominator:  buildDenominator(ir, normalResults),
+		Denominator:  buildDenominator(ir, normalResults, provenance),
 		Distribution: buildDistribution(ir, normalResults),
-		Assertions:   buildAssertions(ir, normalResults, replay),
+		Assertions:   buildAssertions(ir, normalResults, replay, provenance),
 		Events:       buildEvents(normalResults),
 		Replay:       replay,
-		Report:       renderReport(ir, normalResults, replay),
+		Report:       renderReport(ir, normalResults, replay, provenance),
 	}
 	if err := writeGeneration(outputPath, result); err != nil {
 		return GenerationResult{}, err
@@ -173,7 +187,7 @@ func jsonWithNewline(value any) ([]byte, error) {
 	return append(raw, '\n'), nil
 }
 
-func buildDenominator(ir SemanticIR, results []CaseResult) SemanticDenominator {
+func buildDenominator(ir SemanticIR, results []CaseResult, provenance OperatorProvenanceReceipt) SemanticDenominator {
 	return SemanticDenominator{
 		Schema:              ProjectionSchema,
 		IRSchema:            ir.Schema,
@@ -197,6 +211,7 @@ func buildDenominator(ir SemanticIR, results []CaseResult) SemanticDenominator {
 			"cross_project_required_gates": ir.Graph.CrossProjectRequiredGates,
 			"caller_owned_output":       true,
 		},
+		OperatorProvenance: provenance,
 		OutputArtifacts: append([]string(nil), RequiredArtifactNames...),
 		Cases:           results,
 	}
@@ -265,7 +280,7 @@ func stateCounts(results []CaseResult) StateCounts {
 	return counts
 }
 
-func buildAssertions(ir SemanticIR, results []CaseResult, replay ReplayReceipt) []GeneratedAssertion {
+func buildAssertions(ir SemanticIR, results []CaseResult, replay ReplayReceipt, provenance OperatorProvenanceReceipt) []GeneratedAssertion {
 	assertions := []GeneratedAssertion{}
 	for _, result := range results {
 		assertions = append(assertions, GeneratedAssertion{
@@ -294,8 +309,43 @@ func buildAssertions(ir SemanticIR, results []CaseResult, replay ReplayReceipt) 
 		GeneratedAssertion{Name: "runtime/cross-project-required-gates", Expected: 0, Observed: ir.Graph.CrossProjectRequiredGates, Pass: ir.Graph.CrossProjectRequiredGates == 0},
 		GeneratedAssertion{Name: "output/exact-artifact-count", Expected: 6, Observed: len(RequiredArtifactNames), Pass: len(RequiredArtifactNames) == 6},
 		GeneratedAssertion{Name: "replay/order-perturbed-match", Expected: true, Observed: replay.Match, Pass: replay.Match},
+		GeneratedAssertion{Name: "operations/bootstrap-refutation-preserved", Expected: StateRefuted, Observed: provenance.BootstrapState, Pass: provenance.BootstrapState == StateRefuted},
+		GeneratedAssertion{Name: "operations/pr-reviewed-gate", Expected: "PR_REVIEWED_OR_PR_REVIEWED_AND_MERGED", Observed: provenance.ReviewGate, Pass: provenance.ReviewGate == ir.Graph.ReviewGate.ReviewedState || provenance.ReviewGate == ir.Graph.ReviewGate.MergedState},
 	)
 	return assertions
+}
+
+func buildOperatorProvenance(graph SemanticGraph, review ReviewOptions) OperatorProvenanceReceipt {
+	receipt := OperatorProvenanceReceipt{
+		BootstrapState:    graph.BootstrapProvenance.State,
+		BootstrapReason:   graph.BootstrapProvenance.Reason,
+		BootstrapCommit:   graph.BootstrapProvenance.Commit,
+		BootstrapRef:      graph.BootstrapProvenance.Ref,
+		ReviewGate:        graph.ReviewGate.MissingState,
+		PullRequestNumber: review.PullRequestNumber,
+		MergeSHA:          review.MergeSHA,
+		ReleaseTag:        review.ReleaseTag,
+		Evidence:          []string{},
+	}
+	if review.PullRequestNumber <= 0 {
+		receipt.Unknown = &UnknownClaim{
+			Stage: graph.BootstrapProvenance.Ref,
+			Step: graph.ReviewGate.ID,
+			Reason: graph.ReviewGate.Reason,
+			UnknownClass: graph.ReviewGate.UnknownClass,
+			NextOperation: graph.ReviewGate.NextOperation,
+			BlockedBy: []string{"pull_request_number"},
+		}
+		return receipt
+	}
+	receipt.Evidence = append(receipt.Evidence, fmt.Sprintf("pull_request_number=%d", review.PullRequestNumber))
+	receipt.ReviewGate = graph.ReviewGate.ReviewedState
+	if review.MergeSHA != "" && review.ReleaseTag != "" {
+		receipt.Evidence = append(receipt.Evidence, "merge_sha="+review.MergeSHA, "release_tag="+review.ReleaseTag, "review_event=annotated_release_tag")
+		receipt.ReviewGate = graph.ReviewGate.MergedState
+	}
+	receipt.Evidence = sortedNonNil(receipt.Evidence)
+	return receipt
 }
 
 func vectorHasFour(values []VectorEntry) bool {

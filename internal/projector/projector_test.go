@@ -22,6 +22,9 @@ func TestCanonicalProjection(t *testing.T) {
 	if got := stateCounts(results); got != (StateCounts{Total: 12, Closed: 4, Unknown: 4, Refuted: 4}) {
 		t.Fatalf("state counts = %+v", got)
 	}
+	if _, err := LoadReviewFixture(filepath.Join(root, "fixtures", "operational", "pr-reviewed-release.json"), ir.Graph); err != nil {
+		t.Fatal(err)
+	}
 	for _, result := range results {
 		if result.State != result.ExpectedState {
 			t.Fatalf("case %s state = %s, expected %s", result.CaseID, result.State, result.ExpectedState)

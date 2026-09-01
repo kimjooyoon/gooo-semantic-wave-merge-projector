@@ -25,6 +25,10 @@ state ordinal=3 name=REFUTED result=REFUTED next_operation=REPAIR_OR_REPLACE_REF
 
 authority ordinal=1 name=proposal-authority scope=self-improvement.proposal.create,self-improvement.proposal.inspect,self-improvement.wave.project
 
+provenance id=direct-main-bootstrap state=REFUTED reason=PR_FIRST_IMPLEMENTATION_BYPASSED commit=fad70e1 ref=main
+review_gate id=pr-reviewed-release required=true missing_state=UNKNOWN reviewed_state=PR_REVIEWED merged_state=PR_REVIEWED_AND_MERGED reason=PR_REVIEW_REQUIRED_BEFORE_PROPOSAL_OR_RELEASE unknown_class=MISSING_PR_REVIEW_EVIDENCE next_operation=REQUIRE_PR_REVIEWED_CHANGE
+review_fixture path=fixtures/operational/pr-reviewed-release.json
+
 invariant ordinal=1 id=base-ledger-aligned class=FOUNDATION proof=FOUNDATION indicator=DRIVER stage=BASE step=ALIGN_LEDGER depends_on=
 invariant ordinal=2 id=proposal-fields-complete class=FOUNDATION proof=FOUNDATION indicator=DRIVER stage=INPUT step=REQUIRE_PROPOSAL_FIELDS depends_on=base-ledger-aligned
 invariant ordinal=3 id=required-evidence-closed class=FOUNDATION proof=FOUNDATION indicator=DRIVER stage=EVIDENCE step=CLOSE_REQUIRED_EVIDENCE depends_on=proposal-fields-complete

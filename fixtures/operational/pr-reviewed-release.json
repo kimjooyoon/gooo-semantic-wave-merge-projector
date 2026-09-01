@@ -1,0 +1,12 @@
+{
+  "fixture_id": "pr-reviewed-release",
+  "kind": "operator-provenance-gate",
+  "required": true,
+  "bootstrap_state": "REFUTED",
+  "bootstrap_reason": "PR_FIRST_IMPLEMENTATION_BYPASSED",
+  "missing_review_state": "UNKNOWN",
+  "reviewed_state": "PR_REVIEWED",
+  "merged_state": "PR_REVIEWED_AND_MERGED",
+  "evidence_source": "annotated-tag-or-pull-request-event",
+  "fail_closed": true
+}

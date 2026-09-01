@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func renderReport(ir SemanticIR, results []CaseResult, replay ReplayReceipt) string {
+func renderReport(ir SemanticIR, results []CaseResult, replay ReplayReceipt, provenance OperatorProvenanceReceipt) string {
 	var builder strings.Builder
 	counts := stateCounts(results)
 	proof := vectorCounts(ir.Graph, true)
@@ -14,6 +14,7 @@ func renderReport(ir SemanticIR, results []CaseResult, replay ReplayReceipt) str
 	fmt.Fprintf(&builder, "Graph: `%s`\n\nReleased graph digest: `%s`\n\n", ir.Graph.GraphID, ir.SourceDigest)
 	builder.WriteString("This is a Gooo self-improvement proposal serializer. It does not perform a Git merge or commit. Go supplies parser, evaluator, generator, and runtime behavior; the released `.gooo` graph supplies semantic authority.\n\n")
 	fmt.Fprintf(&builder, "Runtime contract: repository writes `%d`; local test executions `%d`; cross-project required gates `%d`; output artifacts `%d`.\n\n", ir.Graph.RepositoryWrites, ir.Graph.LocalTestExecutions, ir.Graph.CrossProjectRequiredGates, len(RequiredArtifactNames))
+	fmt.Fprintf(&builder, "Operator provenance: bootstrap `%s` (`%s`) at commit `%s` on ref `%s`. This fact remains REFUTED because PR-first implementation was bypassed. Review gate: `%s`; pull request `%d`.\n\n", provenance.BootstrapState, provenance.BootstrapReason, provenance.BootstrapCommit, provenance.BootstrapRef, provenance.ReviewGate, provenance.PullRequestNumber)
 	builder.WriteString("## Fixed denominator\n\n")
 	fmt.Fprintf(&builder, "There are exactly `%d` named immutable conditions. State counts are `CLOSED=%d`, `UNKNOWN=%d`, `REFUTED=%d`; precedence is `%s`.\n\n", len(ir.Graph.Invariants), counts.Closed, counts.Unknown, counts.Refuted, strings.Join(ir.Graph.Precedence, " > "))
 	builder.WriteString("| proof vector | count |\n|---|---:|\n")
@@ -50,7 +51,7 @@ func renderReport(ir SemanticIR, results []CaseResult, replay ReplayReceipt) str
 	builder.WriteString("\n")
 
 	builder.WriteString("## Deterministic replay\n\n")
-	fmt.Fprintf(&builder, "Normal projection digest: `%s`\n\nOrder-perturbed projection digest: `%s`\n\nReplay state: `%s` (`%s`); immutable receipt: `%t`.\n\n", replay.NormalDigest, replay.OrderPerturbedDigest, replay.State, replay.Reason, replay.Immutable)
+	fmt.Fprintf(&builder, "Normal projection digest: `%s`\n\nOrder-perturbed projection digest: `%s`\n\nReplay state: `%s` (`%s`); immutable receipt: `%t`. Review evidence: `%s`.\n\n", replay.NormalDigest, replay.OrderPerturbedDigest, replay.State, replay.Reason, replay.Immutable, strings.Join(provenance.Evidence, ";"))
 	builder.WriteString("## Generated artifacts\n\n")
 	for _, name := range RequiredArtifactNames {
 		fmt.Fprintf(&builder, "- `%s`\n", name)
