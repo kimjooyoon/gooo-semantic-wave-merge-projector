@@ -1,0 +1,68 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go 1.27
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.0'
+          cache: true
+
+      - name: Read immutable annotated-tag review evidence
+        id: tag-evidence
+        shell: bash
+        run: |
+          test "$(git cat-file -t "$GITHUB_REF_NAME")" = tag
+          tag_message="$(git for-each-ref --format='%(contents)' "refs/tags/$GITHUB_REF_NAME")"
+          reviewed_pr="$(printf '%s\n' "$tag_message" | sed -n 's/^pull_request=//p')"
+          merge_sha="$(printf '%s\n' "$tag_message" | sed -n 's/^merge_sha=//p')"
+          test -n "$reviewed_pr"
+          test -n "$merge_sha"
+          printf 'reviewed_pr=%s\n' "$reviewed_pr" >> "$GITHUB_OUTPUT"
+          printf 'merge_sha=%s\n' "$merge_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Generate and verify reviewed release projection
+        shell: bash
+        run: |
+          output_dir="$RUNNER_TEMP/gooo-wave-output"
+          mkdir -p "$output_dir"
+          go run ./cmd/projector conformance \
+            --source .gooo/semantic-wave-merge-projector.gooo \
+            --cases fixtures/cases \
+            --output "$output_dir" \
+            --root "$GITHUB_WORKSPACE" \
+            --reviewed-pr "${{ steps.tag-evidence.outputs.reviewed_pr }}" \
+            --reviewed-merge-sha "${{ steps.tag-evidence.outputs.merge_sha }}" \
+            --release-tag "$GITHUB_REF_NAME"
+          tar -czf "$RUNNER_TEMP/gooo-semantic-wave-merge-projector-$GITHUB_REF_NAME.tar.gz" -C "$output_dir" .
+
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          notes_file="$RUNNER_TEMP/release-notes.md"
+          printf '%s\n' \
+            "Reviewed implementation PR: #${{ steps.tag-evidence.outputs.reviewed_pr }}" \
+            "Reviewed merge SHA: ${{ steps.tag-evidence.outputs.merge_sha }}" \
+            "Bootstrap provenance: REFUTED / PR_FIRST_IMPLEMENTATION_BYPASSED / fad70e1 on main." \
+            "The release contains the six caller-owned projection artifacts." > "$notes_file"
+          gh release create "$GITHUB_REF_NAME" \
+            --verify-tag \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file "$notes_file" \
+            "$RUNNER_TEMP/gooo-semantic-wave-merge-projector-$GITHUB_REF_NAME.tar.gz"

@@ -33,14 +33,14 @@ func LoadGraph(path string) (SemanticIR, []byte, error) {
 
 func parseGraph(path string, raw []byte) (SemanticGraph, error) {
 	graph := SemanticGraph{
-		Schema:     GraphSchema,
-		Artifacts:  []ArtifactDecl{},
-		Fields:     []FieldDecl{},
-		States:     map[string]StateDecl{},
+		Schema:      GraphSchema,
+		Artifacts:   []ArtifactDecl{},
+		Fields:      []FieldDecl{},
+		States:      map[string]StateDecl{},
 		Authorities: []AuthorityDecl{},
-		Invariants: []InvariantDecl{},
-		Rules:      map[string]RuleDecl{},
-		Cases:      []CaseContract{},
+		Invariants:  []InvariantDecl{},
+		Rules:       map[string]RuleDecl{},
+		Cases:       []CaseContract{},
 	}
 	scanner := bufio.NewScanner(bytes.NewReader(raw))
 	lineNumber := 0
@@ -131,6 +131,29 @@ func parseGraph(path string, raw []byte) (SemanticGraph, error) {
 				return SemanticGraph{}, err
 			}
 			graph.Authorities = append(graph.Authorities, authority)
+		case "provenance":
+			provenance, err := parseProvenance(values, location, lineNumber)
+			if err != nil {
+				return SemanticGraph{}, err
+			}
+			if graph.BootstrapProvenance.ID != "" {
+				return SemanticGraph{}, fmt.Errorf("line %d: duplicate bootstrap provenance", lineNumber)
+			}
+			graph.BootstrapProvenance = provenance
+		case "review_gate":
+			gate, err := parseReviewGate(values, location, lineNumber)
+			if err != nil {
+				return SemanticGraph{}, err
+			}
+			if graph.ReviewGate.ID != "" {
+				return SemanticGraph{}, fmt.Errorf("line %d: duplicate review gate", lineNumber)
+			}
+			graph.ReviewGate = gate
+		case "review_fixture":
+			if graph.ReviewFixture != "" || values["path"] == "" {
+				return SemanticGraph{}, fmt.Errorf("line %d: invalid review fixture declaration", lineNumber)
+			}
+			graph.ReviewFixture = values["path"]
 		case "invariant":
 			invariant, err := parseInvariant(values, location, lineNumber)
 			if err != nil {
@@ -201,6 +224,26 @@ func parseAuthority(values map[string]string, location SourceLocation, line int)
 		return AuthorityDecl{}, fmt.Errorf("line %d: authority scope is required", line)
 	}
 	return AuthorityDecl{Ordinal: ordinal, Name: values["name"], Scope: scope, Source: location}, nil
+}
+
+func parseProvenance(values map[string]string, location SourceLocation, line int) (BootstrapProvenanceDecl, error) {
+	provenance := BootstrapProvenanceDecl{ID: values["id"], State: values["state"], Reason: values["reason"], Commit: values["commit"], Ref: values["ref"], Source: location}
+	if provenance.ID == "" || provenance.State == "" || provenance.Reason == "" || provenance.Commit == "" || provenance.Ref == "" {
+		return BootstrapProvenanceDecl{}, fmt.Errorf("line %d: incomplete bootstrap provenance", line)
+	}
+	return provenance, nil
+}
+
+func parseReviewGate(values map[string]string, location SourceLocation, line int) (ReviewGateDecl, error) {
+	required, err := boolValue(values, "required")
+	if err != nil {
+		return ReviewGateDecl{}, fmt.Errorf("line %d: %w", line, err)
+	}
+	gate := ReviewGateDecl{ID: values["id"], Required: required, MissingState: values["missing_state"], ReviewedState: values["reviewed_state"], MergedState: values["merged_state"], Reason: values["reason"], UnknownClass: values["unknown_class"], NextOperation: values["next_operation"], Source: location}
+	if gate.ID == "" || gate.MissingState == "" || gate.ReviewedState == "" || gate.MergedState == "" || gate.Reason == "" || gate.UnknownClass == "" || gate.NextOperation == "" {
+		return ReviewGateDecl{}, fmt.Errorf("line %d: incomplete review gate", line)
+	}
+	return gate, nil
 }
 
 func parseInvariant(values map[string]string, location SourceLocation, line int) (InvariantDecl, error) {
@@ -292,6 +335,12 @@ func validateGraph(graph SemanticGraph) error {
 	}
 	if len(graph.Authorities) == 0 {
 		return errors.New("graph must declare an authority scope")
+	}
+	if graph.BootstrapProvenance.State != StateRefuted || graph.BootstrapProvenance.Reason != "PR_FIRST_IMPLEMENTATION_BYPASSED" || graph.BootstrapProvenance.Commit == "" || graph.BootstrapProvenance.Ref == "" {
+		return errors.New("graph must preserve the direct-main bootstrap refutation provenance")
+	}
+	if !graph.ReviewGate.Required || graph.ReviewGate.MissingState != StateUnknown || graph.ReviewGate.ReviewedState == "" || graph.ReviewGate.MergedState == "" || graph.ReviewGate.Reason == "" || graph.ReviewGate.UnknownClass == "" || graph.ReviewGate.NextOperation == "" || graph.ReviewFixture == "" {
+		return errors.New("graph must declare a required PR-reviewed release gate")
 	}
 	if len(graph.Invariants) != 12 {
 		return errors.New("graph denominator must contain exactly twelve invariants")
@@ -389,6 +438,30 @@ func LoadCases(directory string, graph SemanticGraph) ([]FixtureInput, error) {
 		return caseOrdinal(graph, fixtures[i].FixtureID) < caseOrdinal(graph, fixtures[j].FixtureID)
 	})
 	return fixtures, nil
+}
+
+func LoadReviewFixture(path string, graph SemanticGraph) (ReviewFixture, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return ReviewFixture{}, err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	var fixture ReviewFixture
+	if err := decoder.Decode(&fixture); err != nil {
+		return ReviewFixture{}, fmt.Errorf("decode review fixture %s: %w", path, err)
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		if err == nil {
+			return ReviewFixture{}, fmt.Errorf("decode review fixture %s: multiple JSON values", path)
+		}
+		return ReviewFixture{}, fmt.Errorf("decode review fixture %s: %w", path, err)
+	}
+	if fixture.FixtureID != "pr-reviewed-release" || fixture.Kind != "operator-provenance-gate" || !fixture.Required || fixture.BootstrapState != graph.BootstrapProvenance.State || fixture.BootstrapReason != graph.BootstrapProvenance.Reason || fixture.MissingReviewState != graph.ReviewGate.MissingState || fixture.ReviewedState != graph.ReviewGate.ReviewedState || fixture.MergedState != graph.ReviewGate.MergedState || fixture.EvidenceSource == "" || !fixture.FailClosed {
+		return ReviewFixture{}, errors.New("review fixture does not close the released PR-reviewed gate")
+	}
+	return fixture, nil
 }
 
 func decodeFixture(path string) (FixtureInput, error) {
