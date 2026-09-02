@@ -1,7 +1,7 @@
 package gooo.semantic.wave_merge_projector
 
 # The released .gooo graph is the semantic authority for this projector.
-graph id=gooo-semantic-wave-merge-projector release=v0.1.0 precedence=REFUTED,UNKNOWN,CLOSED repository_writes=0 local_test_executions=0 cross_project_required_gates=0 output_artifact_count=6 ledger_digest=ledger:wave-v1
+graph id=gooo-semantic-wave-merge-projector release=v0.1.1 precedence=REFUTED,UNKNOWN,CLOSED repository_writes=0 local_test_executions=0 cross_project_required_gates=0 output_artifact_count=6 ledger_digest=ledger:wave-v1
 
 artifact ordinal=1 name=wave-projection.json
 artifact ordinal=2 name=wave-distribution.json
@@ -28,6 +28,7 @@ authority ordinal=1 name=proposal-authority scope=self-improvement.proposal.crea
 provenance id=direct-main-bootstrap state=REFUTED reason=PR_FIRST_IMPLEMENTATION_BYPASSED commit=fad70e1 ref=main
 review_gate id=pr-reviewed-release required=true missing_state=UNKNOWN reviewed_state=PR_REVIEWED merged_state=PR_REVIEWED_AND_MERGED reason=PR_REVIEW_REQUIRED_BEFORE_PROPOSAL_OR_RELEASE unknown_class=MISSING_PR_REVIEW_EVIDENCE next_operation=REQUIRE_PR_REVIEWED_CHANGE
 review_fixture path=fixtures/operational/pr-reviewed-release.json
+historical_release ordinal=1 tag=v0.1.0 run=33573535315 state=REFUTED reason=RELEASE_ATTEMPT_FAILED_DURING_TAG_EVIDENCE_READ
 
 invariant ordinal=1 id=base-ledger-aligned class=FOUNDATION proof=FOUNDATION indicator=DRIVER stage=BASE step=ALIGN_LEDGER depends_on=
 invariant ordinal=2 id=proposal-fields-complete class=FOUNDATION proof=FOUNDATION indicator=DRIVER stage=INPUT step=REQUIRE_PROPOSAL_FIELDS depends_on=base-ledger-aligned
