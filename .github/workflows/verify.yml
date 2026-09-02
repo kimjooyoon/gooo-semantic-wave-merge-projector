@@ -25,9 +25,23 @@ jobs:
       - name: Verify Go formatting
         shell: bash
         run: |
-          mapfile -d '' go_files < <(find . -name '*.go' -type f -not -path './.git/*' -print0)
-          gofmt -d "${go_files[@]}" | tee "$RUNNER_TEMP/gofmt.diff"
-          test ! -s "$RUNNER_TEMP/gofmt.diff"
+          normalized_dir="$RUNNER_TEMP/gofmt-source"
+          mkdir -p "$normalized_dir"
+          cp -R "$GITHUB_WORKSPACE/." "$normalized_dir/"
+          mapfile -d '' normalized_go_files < <(find "$normalized_dir" -name '*.go' -type f -not -path '*/.git/*' -print0)
+          gofmt -w "${normalized_go_files[@]}"
+          diff -ruN --exclude=.git "$GITHUB_WORKSPACE" "$normalized_dir" > "$RUNNER_TEMP/gofmt.patch" || true
+          test ! -s "$RUNNER_TEMP/gofmt.patch"
+
+      - name: Upload normalized formatting source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gofmt-normalized-source
+          path: |
+            ${{ runner.temp }}/gofmt-source
+            ${{ runner.temp }}/gofmt.patch
+          if-no-files-found: ignore
 
       - name: Run unit tests
         run: go test ./...
