@@ -25,6 +25,9 @@ func TestCanonicalProjection(t *testing.T) {
 	if _, err := LoadReviewFixture(filepath.Join(root, "fixtures", "operational", "pr-reviewed-release.json"), ir.Graph); err != nil {
 		t.Fatal(err)
 	}
+	if len(ir.Graph.HistoricalReleases) != 1 || ir.Graph.HistoricalReleases[0].Tag != "v0.1.0" || ir.Graph.HistoricalReleases[0].State != StateRefuted {
+		t.Fatalf("historical release provenance = %+v", ir.Graph.HistoricalReleases)
+	}
 	for _, result := range results {
 		if result.State != result.ExpectedState {
 			t.Fatalf("case %s state = %s, expected %s", result.CaseID, result.State, result.ExpectedState)

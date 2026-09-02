@@ -41,6 +41,7 @@ func parseGraph(path string, raw []byte) (SemanticGraph, error) {
 		Invariants:  []InvariantDecl{},
 		Rules:       map[string]RuleDecl{},
 		Cases:       []CaseContract{},
+		HistoricalReleases: []HistoricalReleaseDecl{},
 	}
 	scanner := bufio.NewScanner(bytes.NewReader(raw))
 	lineNumber := 0
@@ -154,6 +155,12 @@ func parseGraph(path string, raw []byte) (SemanticGraph, error) {
 				return SemanticGraph{}, fmt.Errorf("line %d: invalid review fixture declaration", lineNumber)
 			}
 			graph.ReviewFixture = values["path"]
+		case "historical_release":
+			release, err := parseHistoricalRelease(values, location, lineNumber)
+			if err != nil {
+				return SemanticGraph{}, err
+			}
+			graph.HistoricalReleases = append(graph.HistoricalReleases, release)
 		case "invariant":
 			invariant, err := parseInvariant(values, location, lineNumber)
 			if err != nil {
@@ -244,6 +251,14 @@ func parseReviewGate(values map[string]string, location SourceLocation, line int
 		return ReviewGateDecl{}, fmt.Errorf("line %d: incomplete review gate", line)
 	}
 	return gate, nil
+}
+
+func parseHistoricalRelease(values map[string]string, location SourceLocation, line int) (HistoricalReleaseDecl, error) {
+	ordinal, err := integerValue(values, "ordinal")
+	if err != nil || ordinal < 1 || values["tag"] == "" || values["run"] == "" || values["state"] == "" || values["reason"] == "" {
+		return HistoricalReleaseDecl{}, fmt.Errorf("line %d: incomplete historical release", line)
+	}
+	return HistoricalReleaseDecl{Ordinal: ordinal, Tag: values["tag"], Run: values["run"], State: values["state"], Reason: values["reason"], Source: location}, nil
 }
 
 func parseInvariant(values map[string]string, location SourceLocation, line int) (InvariantDecl, error) {
@@ -341,6 +356,9 @@ func validateGraph(graph SemanticGraph) error {
 	}
 	if !graph.ReviewGate.Required || graph.ReviewGate.MissingState != StateUnknown || graph.ReviewGate.ReviewedState == "" || graph.ReviewGate.MergedState == "" || graph.ReviewGate.Reason == "" || graph.ReviewGate.UnknownClass == "" || graph.ReviewGate.NextOperation == "" || graph.ReviewFixture == "" {
 		return errors.New("graph must declare a required PR-reviewed release gate")
+	}
+	if len(graph.HistoricalReleases) != 1 || graph.HistoricalReleases[0].Tag != "v0.1.0" || graph.HistoricalReleases[0].State != StateRefuted || graph.HistoricalReleases[0].Run == "" || graph.HistoricalReleases[0].Reason == "" {
+		return errors.New("graph must preserve the failed v0.1.0 release attempt")
 	}
 	if len(graph.Invariants) != 12 {
 		return errors.New("graph denominator must contain exactly twelve invariants")

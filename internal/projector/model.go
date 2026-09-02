@@ -87,6 +87,15 @@ type BootstrapProvenanceDecl struct {
 	Source SourceLocation `json:"source_location"`
 }
 
+type HistoricalReleaseDecl struct {
+	Ordinal int            `json:"ordinal"`
+	Tag     string         `json:"tag"`
+	Run     string         `json:"run"`
+	State   string         `json:"state"`
+	Reason  string         `json:"reason"`
+	Source  SourceLocation `json:"source_location"`
+}
+
 type ReviewGateDecl struct {
 	ID            string         `json:"id"`
 	Required      bool           `json:"required"`
@@ -146,6 +155,7 @@ type SemanticGraph struct {
 	BootstrapProvenance       BootstrapProvenanceDecl `json:"bootstrap_provenance"`
 	ReviewGate                ReviewGateDecl          `json:"review_gate"`
 	ReviewFixture             string                  `json:"review_fixture"`
+	HistoricalReleases        []HistoricalReleaseDecl `json:"historical_releases"`
 	Invariants                []InvariantDecl         `json:"invariants"`
 	Rules                     map[string]RuleDecl     `json:"rules"`
 	Cases                     []CaseContract          `json:"cases"`
@@ -209,6 +219,10 @@ type OperatorProvenanceReceipt struct {
 	BootstrapReason   string        `json:"bootstrap_reason"`
 	BootstrapCommit   string        `json:"bootstrap_commit"`
 	BootstrapRef      string        `json:"bootstrap_ref"`
+	HistoricalRelease string        `json:"historical_release"`
+	HistoricalRun     string        `json:"historical_run"`
+	HistoricalState   string        `json:"historical_state"`
+	HistoricalReason  string        `json:"historical_reason"`
 	ReviewGate        string        `json:"review_gate"`
 	PullRequestNumber int           `json:"pull_request_number"`
 	MergeSHA          string        `json:"merge_sha,omitempty"`

@@ -313,11 +313,16 @@ func buildAssertions(ir SemanticIR, results []CaseResult, replay ReplayReceipt, 
 }
 
 func buildOperatorProvenance(graph SemanticGraph, review ReviewOptions) OperatorProvenanceReceipt {
+	historical := graph.HistoricalReleases[0]
 	receipt := OperatorProvenanceReceipt{
 		BootstrapState:    graph.BootstrapProvenance.State,
 		BootstrapReason:   graph.BootstrapProvenance.Reason,
 		BootstrapCommit:   graph.BootstrapProvenance.Commit,
 		BootstrapRef:      graph.BootstrapProvenance.Ref,
+		HistoricalRelease: historical.Tag,
+		HistoricalRun:     historical.Run,
+		HistoricalState:   historical.State,
+		HistoricalReason:  historical.Reason,
 		ReviewGate:        graph.ReviewGate.MissingState,
 		PullRequestNumber: review.PullRequestNumber,
 		MergeSHA:          review.MergeSHA,

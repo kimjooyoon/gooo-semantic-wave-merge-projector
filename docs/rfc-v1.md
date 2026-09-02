@@ -15,6 +15,12 @@ precedence, allowed authority, exact denominator, proof choices, indicator
 classes, fixture expectations, and artifact names. The Go implementation does
 not define a second denominator or transition table.
 
+The graph also preserves the operational bootstrap fact that the first
+implementation commit was published on `main` before a PR existed. That fact
+is permanently `REFUTED` with reason `PR_FIRST_IMPLEMENTATION_BYPASSED`.
+Subsequent proposal and release conformance requires a positive PR review
+receipt; release tags additionally carry the reviewed merge SHA.
+
 The denominator contains exactly twelve named immutable conditions. Four use
 the `FOUNDATION` proof choice, four use `COHERENCE`, and four use `REGRESSION`.
 The indicator vector contains four `DRIVER`, four `OUTCOME`, and four
