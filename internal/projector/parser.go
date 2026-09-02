@@ -33,14 +33,14 @@ func LoadGraph(path string) (SemanticIR, []byte, error) {
 
 func parseGraph(path string, raw []byte) (SemanticGraph, error) {
 	graph := SemanticGraph{
-		Schema:      GraphSchema,
-		Artifacts:   []ArtifactDecl{},
-		Fields:      []FieldDecl{},
-		States:      map[string]StateDecl{},
-		Authorities: []AuthorityDecl{},
-		Invariants:  []InvariantDecl{},
-		Rules:       map[string]RuleDecl{},
-		Cases:       []CaseContract{},
+		Schema:             GraphSchema,
+		Artifacts:          []ArtifactDecl{},
+		Fields:             []FieldDecl{},
+		States:             map[string]StateDecl{},
+		Authorities:        []AuthorityDecl{},
+		Invariants:         []InvariantDecl{},
+		Rules:              map[string]RuleDecl{},
+		Cases:              []CaseContract{},
 		HistoricalReleases: []HistoricalReleaseDecl{},
 	}
 	scanner := bufio.NewScanner(bytes.NewReader(raw))
