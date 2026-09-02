@@ -28,12 +28,36 @@ jobs:
         shell: bash
         run: |
           tag_ref="refs/tags/$GITHUB_REF_NAME"
-          tag_object="$(git rev-parse "$tag_ref")"
-          test "$(git cat-file -t "$tag_object")" = tag
-          tag_target="$(git rev-parse "$tag_object^{}")"
+          evidence_ref="refs/tags/gooo-release-evidence-$GITHUB_RUN_ID"
+          git fetch --force --no-tags origin "$tag_ref:$evidence_ref"
+          tag_object="$(git rev-parse "$evidence_ref")"
+          tag_type="$(git cat-file -t "$tag_object")"
+          tag_target="$(git rev-parse "$evidence_ref^{}")"
           tag_payload="$(git cat-file tag "$tag_object")"
           reviewed_pr="$(printf '%s\n' "$tag_payload" | awk -F= '$1 == "pull_request" { print substr($0, index($0, "=") + 1); exit }')"
           merge_sha="$(printf '%s\n' "$tag_payload" | awk -F= '$1 == "merge_sha" { print substr($0, index($0, "=") + 1); exit }')"
+          reviewed_pr_present=false
+          merge_sha_present=false
+          comparison_result=missing
+          if test -n "$reviewed_pr"; then
+            reviewed_pr_present=true
+          fi
+          if test -n "$merge_sha"; then
+            merge_sha_present=true
+          fi
+          if test "$merge_sha_present" = true; then
+            comparison_result=mismatch
+            if test "$merge_sha" = "$tag_target"; then
+              comparison_result=match
+            fi
+          fi
+          printf 'tag_object_type=%s\n' "$tag_type"
+          printf 'tag_object_sha=%s\n' "$tag_object"
+          printf 'tag_target_sha=%s\n' "$tag_target"
+          printf 'reviewed_pr_present=%s\n' "$reviewed_pr_present"
+          printf 'merge_sha_present=%s\n' "$merge_sha_present"
+          printf 'merge_target_comparison=%s\n' "$comparison_result"
+          test "$tag_type" = tag
           test -n "$reviewed_pr"
           test -n "$merge_sha"
           test "$merge_sha" = "$tag_target"
