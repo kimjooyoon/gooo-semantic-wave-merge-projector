@@ -28,11 +28,12 @@ jobs:
         shell: bash
         run: |
           tag_ref="refs/tags/$GITHUB_REF_NAME"
-          test "$(git cat-file -t "$tag_ref")" = tag
-          tag_target="$(git rev-parse "$tag_ref^{}")"
-          tag_message="$(git cat-file tag "$tag_ref" | sed -n '/^$/,$p')"
-          reviewed_pr="$(printf '%s\n' "$tag_message" | sed -n 's/^pull_request=//p')"
-          merge_sha="$(printf '%s\n' "$tag_message" | sed -n 's/^merge_sha=//p')"
+          tag_object="$(git rev-parse "$tag_ref")"
+          test "$(git cat-file -t "$tag_object")" = tag
+          tag_target="$(git rev-parse "$tag_object^{}")"
+          tag_payload="$(git cat-file tag "$tag_object")"
+          reviewed_pr="$(printf '%s\n' "$tag_payload" | awk -F= '$1 == "pull_request" { print substr($0, index($0, "=") + 1); exit }')"
+          merge_sha="$(printf '%s\n' "$tag_payload" | awk -F= '$1 == "merge_sha" { print substr($0, index($0, "=") + 1); exit }')"
           test -n "$reviewed_pr"
           test -n "$merge_sha"
           test "$merge_sha" = "$tag_target"
