@@ -208,8 +208,13 @@ func EvaluateFixture(ir SemanticIR, fixture FixtureInput) CaseResult {
 		proposalIndexes[index] = index
 	}
 	sort.SliceStable(proposalIndexes, func(i, j int) bool {
-		left, right := records[proposalIndexes[i]].input.ProposalID, records[proposalIndexes[j]].input.ProposalID
+		leftRecord, rightRecord := records[proposalIndexes[i]], records[proposalIndexes[j]]
+		left, right := leftRecord.input.ProposalID, rightRecord.input.ProposalID
 		if left == right {
+			leftKey, rightKey := proposalOrderKey(leftRecord.input), proposalOrderKey(rightRecord.input)
+			if leftKey != rightKey {
+				return leftKey < rightKey
+			}
 			return proposalIndexes[i] < proposalIndexes[j]
 		}
 		return left < right
@@ -441,6 +446,39 @@ func sortedNonNil(values []string) []string {
 		return []string{}
 	}
 	return result
+}
+
+func proposalOrderKey(proposal ProposalInput) string {
+	locks := append([]ToolReleaseLockInput(nil), proposal.ToolReleaseLocks...)
+	sort.SliceStable(locks, func(i, j int) bool {
+		left := locks[i].ToolID + "|" + locks[i].ReleaseDigest + "|" + optionalBoolKey(locks[i].Mutable) + "|" + optionalBoolKey(locks[i].Verified)
+		right := locks[j].ToolID + "|" + locks[j].ReleaseDigest + "|" + optionalBoolKey(locks[j].Mutable) + "|" + optionalBoolKey(locks[j].Verified)
+		return left < right
+	})
+	lockKeys := make([]string, 0, len(locks))
+	for _, lock := range locks {
+		lockKeys = append(lockKeys, lock.ToolID+"|"+lock.ReleaseDigest+"|"+optionalBoolKey(lock.Mutable)+"|"+optionalBoolKey(lock.Verified))
+	}
+	return strings.Join([]string{
+		proposal.ProposalID,
+		proposal.BaseLedgerDigest,
+		strings.Join(sortStringsUnique(proposal.SemanticReadSet), ","),
+		strings.Join(sortStringsUnique(proposal.SemanticWriteSet), ","),
+		strings.Join(sortStringsUnique(proposal.RequiredEvidence), ","),
+		strings.Join(lockKeys, ","),
+		strings.Join(sortStringsUnique(proposal.CausalDependencies), ","),
+		strings.Join(sortStringsUnique(proposal.AuthorityScope), ","),
+	}, "\x00")
+}
+
+func optionalBoolKey(value *bool) string {
+	if value == nil {
+		return "nil"
+	}
+	if *value {
+		return "true"
+	}
+	return "false"
 }
 
 func makeStringSet(values []string) map[string]bool {

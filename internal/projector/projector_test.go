@@ -83,6 +83,46 @@ func TestReadAfterWriteDependencyIsOrdered(t *testing.T) {
 	t.Fatal("read-after-write fixture not found")
 }
 
+func TestDuplicateProposalReplayOrderingIsCanonical(t *testing.T) {
+	root := repositoryRoot(t)
+	ir, _, err := LoadGraph(filepath.Join(root, ".gooo", "semantic-wave-merge-projector.gooo"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutable, verified := false, true
+	proposal := func(read, write, evidence string) ProposalInput {
+		return ProposalInput{
+			ProposalID:         "duplicate-proposal",
+			BaseLedgerDigest:   ir.Graph.LedgerDigest,
+			SemanticReadSet:    []string{read},
+			SemanticWriteSet:   []string{write},
+			RequiredEvidence:   []string{evidence},
+			ToolReleaseLocks:   []ToolReleaseLockInput{{ToolID: "gooo-evaluator", ReleaseDigest: "sha256:tool-v1", Mutable: &mutable, Verified: &verified}},
+			CausalDependencies: []string{},
+			AuthorityScope:     []string{"self-improvement.proposal.create"},
+		}
+	}
+	fixture := FixtureInput{
+		FixtureID:        "malformed-proposal",
+		ExpectedState:    StateRefuted,
+		BaseLedgerDigest: ir.Graph.LedgerDigest,
+		EvidenceDigests:  []string{"evidence-a", "evidence-b"},
+		Proposals: []ProposalInput{
+			proposal("semantic.z", "semantic.a", "evidence-a"),
+			proposal("semantic.a", "semantic.z", "evidence-b"),
+		},
+	}
+	reversed := fixture
+	reversed.Proposals = []ProposalInput{fixture.Proposals[1], fixture.Proposals[0]}
+	first, second := EvaluateFixture(ir, fixture), EvaluateFixture(ir, reversed)
+	if first.State != StateRefuted || second.State != StateRefuted {
+		t.Fatalf("duplicate proposal states = %s, %s", first.State, second.State)
+	}
+	if got, want := projectionDigest([]CaseResult{second}), projectionDigest([]CaseResult{first}); got != want {
+		t.Fatalf("duplicate proposal replay digest changed: got %s, want %s", got, want)
+	}
+}
+
 func repositoryRoot(t *testing.T) string {
 	t.Helper()
 	working, err := os.Getwd()
