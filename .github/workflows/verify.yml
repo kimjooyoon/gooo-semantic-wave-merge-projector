@@ -76,7 +76,7 @@ jobs:
           test "$(find "$output_dir" -maxdepth 1 -type f | wc -l | tr -d ' ')" = 6
 
       - name: Generate fail-closed projection on direct branch push
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           output_dir="$RUNNER_TEMP/gooo-wave-output"
