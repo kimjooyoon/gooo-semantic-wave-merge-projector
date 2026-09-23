@@ -14,6 +14,23 @@ import (
 	"strings"
 )
 
+var requiredProjectionRuleIDs = []string{
+	"base_digest_mismatch",
+	"missing_evidence",
+	"mutable_tool_lock",
+	"unverified_tool_lock",
+	"missing_dependency",
+	"dependency_not_closed",
+	"dependency_cycle",
+	"read_write_conflict",
+	"write_conflict",
+	"authority_escalation",
+	"malformed_proposal",
+	"duplicate_proposal_id",
+	"empty_proposal_set",
+	"replay_mismatch",
+}
+
 func LoadGraph(path string) (SemanticIR, []byte, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -384,6 +401,11 @@ func validateGraph(graph SemanticGraph) error {
 	}
 	if len(graph.Rules) == 0 {
 		return errors.New("graph must declare projection rules")
+	}
+	for _, ruleID := range requiredProjectionRuleIDs {
+		if _, ok := graph.Rules[ruleID]; !ok {
+			return fmt.Errorf("graph must declare runtime rule %s", ruleID)
+		}
 	}
 	invariantIDs := map[string]bool{}
 	for _, invariant := range graph.Invariants {
